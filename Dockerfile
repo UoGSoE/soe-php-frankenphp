@@ -19,10 +19,12 @@ LABEL org.opencontainers.image.source="https://github.com/UoGSoE/soe-php-franken
 ENV TZ=Europe/London
 ENV LANG=en_GB.UTF-8
 
-# serve plain http on :80 like the old apache image - tls is terminated
-# upstream of the container.  without this caddy assumes 'localhost',
-# turns on automatic https and 308-redirects all plain-http requests
-ENV SERVER_NAME=:80
+# serve plain http on :6060 - tls is terminated upstream of the container.
+# without an explicit SERVER_NAME caddy assumes 'localhost', turns on
+# automatic https and 308-redirects all plain-http requests.  6060 rather
+# than 80 so the container can run as an unprivileged user (see USER below)
+ENV SERVER_NAME=:6060
+EXPOSE 6060
 
 # Note: FrankenPHP ships a ZTS build of php on the official docker-library
 #       lineage, so extensions are compiled at build time via
@@ -57,13 +59,21 @@ RUN install-php-extensions \
     && rm -f /tmp/composer-setup.* \
     # set the system timezone
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
-    && echo $TZ > /etc/timezone
+    && echo $TZ > /etc/timezone \
+    # hand the runtime dirs to www-data: caddy writes under /config and /data,
+    # /app is where apps live, /var/www is www-data's HOME (composer cache etc)
+    && chown -R www-data:www-data /config/caddy /data/caddy /app /var/www
 
 # add in the basic php ini settings for uploading files, our timezone and
 # making sure docker env vars land in $_ENV (see variables_order.ini)
 COPY uploads.ini timezone.ini variables_order.ini /usr/local/etc/php/conf.d/
 
+# everything from here on (RUN steps in app Dockerfiles, the entrypoint, the
+# app itself) runs as www-data, not root.  app Dockerfiles need --chown on
+# COPYs of anything the app must write to (storage/, bootstrap/cache/)
+USER www-data
+
 # we inherit the upstream image's entrypoint, Caddyfile and /app workdir -
 # with no app CMD it serves /app/public in 'classic' (php-fpm-ish) mode.
 # octane apps override CMD with something like:
-#   CMD ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=80"]
+#   CMD ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=6060"]
