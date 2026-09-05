@@ -2,6 +2,7 @@ name: build-images
 
 # manual only while the frankenphp pilot is running - add a schedule
 # once the image is in production use
+# 2026-09-05 18:43
 on:
   workflow_dispatch:
 
