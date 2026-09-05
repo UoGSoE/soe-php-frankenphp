@@ -39,6 +39,7 @@ RUN install-php-extensions \
         exif \
         gd \
         gmp \
+        intl \
         ldap \
         pcntl \
         pdo_mysql \
@@ -60,9 +61,12 @@ RUN install-php-extensions \
     # set the system timezone
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone \
-    # hand the runtime dirs to www-data: caddy writes under /config and /data,
-    # /app is where apps live, /var/www is www-data's HOME (composer cache etc)
-    && chown -R www-data:www-data /config/caddy /data/caddy /app /var/www
+    # hand the runtime dirs to www-data: caddy (and psysh/tinker) write under
+    # /config and /data, /app is where apps live, /var/www is www-data's HOME
+    # (composer cache etc).  /run/secrets is pre-created so CI jobs running as
+    # www-data can drop a .env there; in swarm the secrets tmpfs mounts over it
+    && mkdir -p /run/secrets \
+    && chown -R www-data:www-data /config /data /app /var/www /run/secrets
 
 # add in the basic php ini settings for uploading files, our timezone and
 # making sure docker env vars land in $_ENV (see variables_order.ini)

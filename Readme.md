@@ -20,7 +20,7 @@ Set `--workers` explicitly. Octane defaults it to the host's CPU count, which is
 
 ## Differences from the apache image
 
-- The container runs as `www-data`, not root. Nothing in the image needs root at runtime, so there is no `gosu` step. In an app Dockerfile, `COPY --chown=www-data:www-data` anything the app writes to, such as `storage/` and `bootstrap/cache/`.
+- The container runs as `www-data`, not root. Nothing in the image needs root at runtime, so there is no `gosu` step. In an app Dockerfile, `COPY --chown=www-data:www-data` anything the app writes to, such as `storage/` and `bootstrap/cache/`. `/run/secrets` exists and is writable by www-data, so a CI job can place a `.env` there the way swarm does.
 - The app listens on port 6060, not 80. An unprivileged user cannot bind port 80, and 6060 is not something else's default. Point the Traefik `loadbalancer.server.port` label at 6060.
 - The work directory is `/app`, not `/var/www/html`.
 - There is no `apache2-foreground`. The upstream entrypoint starts FrankenPHP.
@@ -29,7 +29,7 @@ Set `--workers` explicitly. Octane defaults it to the host's CPU count, which is
 
 ## What is in the image
 
-PHP extensions: bcmath, exif, gd, gmp, ldap, pcntl, pdo_mysql, redis, sysvmsg, zip. The curl, mbstring, sqlite3 and xml extensions come compiled into the upstream image.
+PHP extensions: bcmath, exif, gd, gmp, intl, ldap, pcntl, pdo_mysql, redis, sysvmsg, zip. The curl, mbstring, sqlite3 and xml extensions come compiled into the upstream image.
 
 OS tools: tini, gosu, netcat-openbsd, sqlite3, unzip, vim-tiny, git. Composer is installed at a pinned version.
 
