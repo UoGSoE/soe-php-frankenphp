@@ -8,7 +8,7 @@ Base docker image for our Laravel apps: PHP 8.x running under [FrankenPHP](https
 FROM uogsoe/soe-php-frankenphp:8.4
 ```
 
-Tags exist for PHP 8.2, 8.3, 8.4 and 8.5. Images are built for `linux/amd64` only.
+Tags exist for PHP 8.2, 8.3, 8.4 and 8.5. Each tag covers `linux/amd64` (the servers) and `linux/arm64` (Apple silicon Macs), and Docker pulls the right one for the machine. The single-platform builds are also published as, for example, `8.4-amd64` and `8.4-arm64`.
 
 With no `CMD` the image runs in classic mode, serving `/app/public` over plain http on port 6060 (TLS is terminated upstream of the container). Apps using Laravel Octane override `CMD`:
 
@@ -34,6 +34,14 @@ PHP extensions: bcmath, exif, gd, gmp, intl, ldap, pcntl, pdo_mysql, redis, sysv
 OS tools: tini, gosu, netcat-openbsd, sqlite3, unzip, vim-tiny, git. Composer is installed at a pinned version.
 
 Timezone and language default to Europe/London and en_GB.UTF-8. The ini files in this repo set upload limits, the PHP timezone, and `variables_order = EGPCS` so docker environment variables land in `$_ENV`.
+
+The pcov extension (code coverage) is compiled in but switched off, so production does not load it. To turn it on in an app's dev or ci stage:
+
+```dockerfile
+USER root
+RUN docker-php-ext-enable pcov
+USER www-data
+```
 
 If an app needs extra extensions, install them in the app's own Dockerfile with `install-php-extensions` and pin the versions.
 

@@ -6,7 +6,8 @@ FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION}-${DEBIAN_VERSION
 
 ARG PHP_VERSION=8.5
 ARG PHP_REDIS_VERSION=6.3.0
-ARG COMPOSER_VERSION=2.10.0
+ARG COMPOSER_VERSION=2.11.2
+ARG PCOV_VERSION=1.0.12
 ARG DEBIAN_FRONTEND=noninteractive
 
 LABEL org.opencontainers.image.source="https://github.com/UoGSoE/soe-php-frankenphp" \
@@ -46,6 +47,10 @@ RUN install-php-extensions \
         redis-${PHP_REDIS_VERSION} \
         sysvmsg \
         zip \
+    # pcov (code coverage) is compiled in but left switched off, so it costs
+    # production nothing.  an app's dev or ci stage turns it on, as root, with
+    #   RUN docker-php-ext-enable pcov
+    && IPE_DONT_ENABLE=1 install-php-extensions pcov-${PCOV_VERSION} \
     # and some OS tools we use in app start scripts and for debugging
     && apt-get update \
     && apt-get install -y --no-install-recommends \
